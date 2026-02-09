@@ -1,3 +1,9 @@
+// HuggingFace API configuration - called directly from the browser (no backend needed)
+const HUGGINGFACE_API_URL = 'https://datasets-server.huggingface.co/rows';
+const DATASET = 'vislupus/alpaca-bulgarian-dictionary';
+const HF_CONFIG = 'default';
+const HF_SPLIT = 'train';
+
 // State management
 let currentOffset = 0;
 const itemsPerPage = 100;
@@ -38,13 +44,14 @@ function setupEventListeners() {
     });
 }
 
-// Load dictionary data
+// Load dictionary data directly from HuggingFace
 async function loadDictionary() {
     showSpinner(true);
     hideError();
 
     try {
-        const response = await fetch(`/api/dictionary?offset=${currentOffset}&length=${itemsPerPage}`);
+        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(DATASET)}&config=${HF_CONFIG}&split=${HF_SPLIT}&offset=${currentOffset}&length=${itemsPerPage}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
             throw new Error('Failed to fetch dictionary data');
@@ -54,6 +61,12 @@ async function loadDictionary() {
         allData = result.rows || [];
         filteredData = [...allData];
         
+        // Update totalRows from the response if available
+        if (result.num_rows_total) {
+            totalRows = result.num_rows_total;
+            updateStatistics();
+        }
+
         renderTable();
         updatePaginationButtons();
         
@@ -65,12 +78,13 @@ async function loadDictionary() {
     }
 }
 
-// Load statistics
+// Load statistics directly from HuggingFace
 async function loadStatistics() {
     try {
-        const response = await fetch('/api/stats');
+        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(DATASET)}&config=${HF_CONFIG}&split=${HF_SPLIT}&offset=0&length=1`;
+        const response = await fetch(url);
         const data = await response.json();
-        totalRows = data.totalRows;
+        totalRows = data.num_rows_total || 'Unknown';
         updateStatistics();
     } catch (error) {
         console.error('Error loading stats:', error);
