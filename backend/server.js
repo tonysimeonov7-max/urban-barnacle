@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..')));
 
 // HuggingFace API configuration
 const HUGGINGFACE_API_URL = 'https://datasets-server.huggingface.co/rows';
@@ -17,6 +16,7 @@ const DATASET = 'vislupus/alpaca-bulgarian-dictionary';
 const CONFIG = 'default';
 const SPLIT = 'train';
 
+// API Routes (defined BEFORE static files)
 // Fetch dictionary data from HuggingFace
 app.get('/api/dictionary', async (req, res) => {
   try {
@@ -50,6 +50,9 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
+
+// Static files middleware (after API routes)
+app.use(express.static(path.join(__dirname, '..')));
 
 // Serve the main page
 app.get('/', (req, res) => {
