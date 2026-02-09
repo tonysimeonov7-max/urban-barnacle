@@ -1,8 +1,30 @@
 // HuggingFace API configuration - called directly from the browser (no backend needed)
 const HUGGINGFACE_API_URL = 'https://datasets-server.huggingface.co/rows';
-const DATASET = 'vislupus/alpaca-bulgarian-dictionary';
-const HF_CONFIG = 'default';
-const HF_SPLIT = 'train';
+
+// Dataset definitions with field mappings and column headers
+const DATASETS = {
+    alpaca: {
+        name: 'vislupus/alpaca-bulgarian-dictionary',
+        config: 'default',
+        split: 'train',
+        columns: [
+            { key: 'input', header: 'Дума (Word)', className: 'col-word' },
+            { key: 'instruction', header: 'Въпрос (Question)', className: 'col-definition' },
+            { key: 'output', header: 'Отговор (Answer)', className: 'col-extra' }
+        ]
+    },
+    bogko: {
+        name: 'thebogko/bulgarian-dictionary-2024',
+        config: 'default',
+        split: 'train',
+        columns: [
+            { key: 'word', header: 'Дума (Word)', className: 'col-word' },
+            { key: 'tag', header: 'Етикет (Tag)', className: 'col-definition' }
+        ]
+    }
+};
+
+let currentDatasetKey = 'alpaca';
 
 // State management
 let currentOffset = 0;
@@ -13,6 +35,7 @@ let totalRows = 0;
 
 // DOM elements
 const dictionaryBody = document.getElementById('dictionaryBody');
+const dictionaryHead = document.getElementById('dictionaryHead');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 const prevBtn2 = document.getElementById('prevBtn2');
@@ -23,6 +46,7 @@ const searchBtn = document.getElementById('searchBtn');
 const statsText = document.getElementById('statsText');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const errorMessage = document.getElementById('errorMessage');
+const datasetSelect = document.getElementById('datasetSelect');
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
@@ -42,6 +66,29 @@ function setupEventListeners() {
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') performSearch();
     });
+
+    datasetSelect.addEventListener('change', () => {
+        currentDatasetKey = datasetSelect.value;
+        currentOffset = 0;
+        totalRows = 0;
+        allData = [];
+        filteredData = [];
+        searchInput.value = '';
+        updateTableHeaders();
+        loadDictionary();
+        loadStatistics();
+    });
+}
+
+// Update table headers based on current dataset
+function updateTableHeaders() {
+    const ds = DATASETS[currentDatasetKey];
+    const headerRow = dictionaryHead.querySelector('tr');
+    let html = '<th class="col-index">#</th>';
+    ds.columns.forEach(col => {
+        html += `<th class="${col.className}">${col.header}</th>`;
+    });
+    headerRow.innerHTML = html;
 }
 
 // Load dictionary data directly from HuggingFace
@@ -49,8 +96,9 @@ async function loadDictionary() {
     showSpinner(true);
     hideError();
 
+    const ds = DATASETS[currentDatasetKey];
     try {
-        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(DATASET)}&config=${HF_CONFIG}&split=${HF_SPLIT}&offset=${currentOffset}&length=${itemsPerPage}`;
+        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(ds.name)}&config=${ds.config}&split=${ds.split}&offset=${currentOffset}&length=${itemsPerPage}`;
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -80,8 +128,9 @@ async function loadDictionary() {
 
 // Load statistics directly from HuggingFace
 async function loadStatistics() {
+    const ds = DATASETS[currentDatasetKey];
     try {
-        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(DATASET)}&config=${HF_CONFIG}&split=${HF_SPLIT}&offset=0&length=1`;
+        const url = `${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(ds.name)}&config=${ds.config}&split=${ds.split}&offset=0&length=1`;
         const response = await fetch(url);
         const data = await response.json();
         totalRows = data.num_rows_total || 'Unknown';
@@ -107,7 +156,8 @@ function renderTable() {
     dictionaryBody.innerHTML = '';
 
     if (filteredData.length === 0) {
-        dictionaryBody.innerHTML = '<tr><td colspan="4" class="empty-state">No entries found</td></tr>';
+        const colCount = DATASETS[currentDatasetKey].columns.length + 1;
+        dictionaryBody.innerHTML = `<tr><td colspan="${colCount}" class="empty-state">No entries found</td></tr>`;
         return;
     }
 
@@ -120,26 +170,16 @@ function renderTable() {
 // Create a single table row
 function createTableRow(entry, index) {
     const row = document.createElement('tr');
-    
-    // Extract data from the entry object
     const rowObj = entry.row || entry;
-    
-    // Dataset fields: instruction, input, output
-    // "input" contains the word (e.g. "Дума: аванпост (ава`нпост)")
-    // "instruction" contains the question type
-    // "output" contains the answer
-    let word = rowObj.input || '';
-    let instruction = rowObj.instruction || '';
-    let output = rowObj.output || '';
-
+    const ds = DATASETS[currentDatasetKey];
     const displayIndex = currentOffset + index + 1;
 
-    row.innerHTML = `
-        <td class="col-index">${displayIndex}</td>
-        <td class="col-word">${escapeHtml(String(word))}</td>
-        <td class="col-definition">${escapeHtml(String(instruction))}</td>
-        <td class="col-extra">${escapeHtml(String(output))}</td>
-    `;
+    let html = `<td class="col-index">${displayIndex}</td>`;
+    ds.columns.forEach(col => {
+        const value = rowObj[col.key] || '';
+        html += `<td class="${col.className}">${escapeHtml(String(value))}</td>`;
+    });
+    row.innerHTML = html;
 
     return row;
 }
@@ -147,17 +187,16 @@ function createTableRow(entry, index) {
 // Perform search
 function performSearch() {
     const query = searchInput.value.toLowerCase().trim();
+    const ds = DATASETS[currentDatasetKey];
 
     if (!query) {
         filteredData = [...allData];
     } else {
         filteredData = allData.filter(entry => {
             const rowObj = entry.row || entry;
-            const input = String(rowObj.input || '').toLowerCase();
-            const instruction = String(rowObj.instruction || '').toLowerCase();
-            const output = String(rowObj.output || '').toLowerCase();
-            
-            return input.includes(query) || instruction.includes(query) || output.includes(query);
+            return ds.columns.some(col => {
+                return String(rowObj[col.key] || '').toLowerCase().includes(query);
+            });
         });
     }
 
