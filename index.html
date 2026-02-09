@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulgarian Dictionary - HuggingFace Dataset</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🇧🇬 Bulgarian Dictionary</h1>
+            <p class="subtitle">Explore the Bulgarian language dictionary from HuggingFace</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Search dictionary..."
+                    aria-label="Search dictionary"
+                >
+                <button id="searchBtn" aria-label="Search">🔍</button>
+            </div>
+
+            <div class="pagination-controls">
+                <button id="prevBtn" class="btn btn-secondary" disabled>← Previous</button>
+                <span id="pageInfo" class="page-info">Loading...</span>
+                <button id="nextBtn" class="btn btn-secondary">Next →</button>
+            </div>
+
+            <div class="stats">
+                <p id="statsText">Fetching statistics...</p>
+            </div>
+        </div>
+
+        <div id="loadingSpinner" class="spinner hidden"></div>
+
+        <div id="errorMessage" class="error-message hidden"></div>
+
+        <div class="dictionary-container">
+            <table id="dictionaryTable" class="dictionary-table">
+                <thead>
+                    <tr>
+                        <th class="col-index">#</th>
+                        <th class="col-word">Word</th>
+                        <th class="col-definition">Definition</th>
+                        <th class="col-extra">Additional Info</th>
+                    </tr>
+                </thead>
+                <tbody id="dictionaryBody">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-bottom">
+            <button id="prevBtn2" class="btn btn-secondary" disabled>← Previous</button>
+            <button id="nextBtn2" class="btn btn-secondary">Next →</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Data source: <a href="https://huggingface.co/datasets/vislupus/alpaca-bulgarian-dictionary" target="_blank">vislupus/alpaca-bulgarian-dictionary on HuggingFace</a></p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
