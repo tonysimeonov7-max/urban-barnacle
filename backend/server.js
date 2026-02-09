@@ -44,7 +44,7 @@ app.get('/api/stats', async (req, res) => {
   try {
     const response = await fetch(`${HUGGINGFACE_API_URL}?dataset=${encodeURIComponent(DATASET)}&config=${CONFIG}&split=${SPLIT}&offset=0&length=1`);
     const data = await response.json();
-    res.json({ totalRows: data.total ? data.total : 'Unknown' });
+    res.json({ totalRows: data.num_rows_total ? data.num_rows_total : 'Unknown' });
   } catch (error) {
     console.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });

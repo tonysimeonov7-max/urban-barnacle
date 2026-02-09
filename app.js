@@ -110,31 +110,21 @@ function createTableRow(entry, index) {
     // Extract data from the entry object
     const rowObj = entry.row || entry;
     
-    // Handle different possible data structures
-    let word = '';
-    let definition = '';
-    let extra = '';
-    
-    if (typeof rowObj === 'object') {
-        // Try different possible key names for word
-        word = rowObj.word || rowObj.bulgarian || rowObj.bg || rowObj.text || JSON.stringify(rowObj).substring(0, 50);
-        
-        // Try different possible key names for definition
-        definition = rowObj.definition || rowObj.english || rowObj.en || rowObj.meaning || '';
-        
-        // Try additional info
-        extra = rowObj.example || rowObj.part_of_speech || rowObj.pos || rowObj.note || '';
-    } else {
-        word = String(rowObj);
-    }
+    // Dataset fields: instruction, input, output
+    // "input" contains the word (e.g. "Дума: аванпост (ава`нпост)")
+    // "instruction" contains the question type
+    // "output" contains the answer
+    let word = rowObj.input || '';
+    let instruction = rowObj.instruction || '';
+    let output = rowObj.output || '';
 
     const displayIndex = currentOffset + index + 1;
 
     row.innerHTML = `
         <td class="col-index">${displayIndex}</td>
         <td class="col-word">${escapeHtml(String(word))}</td>
-        <td class="col-definition">${escapeHtml(String(definition))}</td>
-        <td class="col-extra">${escapeHtml(String(extra)) || '—'}</td>
+        <td class="col-definition">${escapeHtml(String(instruction))}</td>
+        <td class="col-extra">${escapeHtml(String(output))}</td>
     `;
 
     return row;
@@ -149,14 +139,14 @@ function performSearch() {
     } else {
         filteredData = allData.filter(entry => {
             const rowObj = entry.row || entry;
-            const word = String(rowObj.word || rowObj.bulgarian || rowObj.bg || '').toLowerCase();
-            const definition = String(rowObj.definition || rowObj.english || rowObj.en || '').toLowerCase();
+            const input = String(rowObj.input || '').toLowerCase();
+            const instruction = String(rowObj.instruction || '').toLowerCase();
+            const output = String(rowObj.output || '').toLowerCase();
             
-            return word.includes(query) || definition.includes(query);
+            return input.includes(query) || instruction.includes(query) || output.includes(query);
         });
     }
 
-    currentOffset = 0;
     renderTable();
     updatePaginationButtons();
 }

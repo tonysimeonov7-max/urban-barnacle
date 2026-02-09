@@ -223,19 +223,18 @@ body {
 }
 
 .col-word {
-    width: 20%;
+    width: 22%;
     font-weight: 500;
     color: var(--primary-color);
 }
 
 .col-definition {
-    width: 55%;
+    width: 30%;
 }
 
 .col-extra {
-    width: 25%;
-    color: #666;
-    font-size: 0.9em;
+    width: 42%;
+    font-size: 0.95em;
 }
 
 .empty-state {
